@@ -23,14 +23,6 @@ subprojects {
      * 其次网易服务器, 阿里云服务器, maven库
      */
     repositories {
-        mavenLocal()
-        maven {
-            credentials{
-                username 'developer'
-                password 'netease'
-            }
-            url 'http://mvn.hz.netease.com/artifactory/repo'
-        }
         maven {url "http://maven.aliyun.com/nexus/content/groups/public/"}
         mavenCentral()
     }
