@@ -1,0 +1,29 @@
+group 'qian'
+version '1.0-SNAPSHOT'
+
+/**
+ * 增加scala插件
+ * scala1代码要放在scala目录下
+ * compileScala任务只会对scala目录下的.scala文件进行编译
+ */
+apply plugin: 'scala'
+
+/**
+ * 配置依赖
+ */
+dependencies {
+    compile group: 'org.apache.spark', name: 'spark-core_2.11', version: '2.1.1'
+    compile group: 'net.minidev', name: 'json-smart', version: '2.3'
+}
+
+
+/**
+ * 设置编译文件目录
+ */
+sourceSets {
+    main {
+        java { srcDir 'src/main/java' }
+        scala { srcDir 'src/main/scala' }
+        resources { srcDir 'src/main/resources' }
+    }
+}
