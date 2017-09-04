@@ -1,9 +1,15 @@
 package qian.fm
 
-import breeze.linalg.{DenseMatrix, DenseVector}
+import breeze.linalg.{*, DenseMatrix, DenseVector}
 import qian.Activation
 /**
   * Created by qianwei on 2017/9/4.
+  * [@spec(Double, Float)]
+  *
+  * 矩阵和向量
+加：+    减：-   点乘：  :*   点除：:/        矩阵乘法: *  矩阵除法: /
+Matrix(*, ::)+Vector 逐行
+Matrix(::, *)+Vector 逐列
   */
 class FM(featureSize: Int, k: Int) extends qian.Classification{
   scala.util.Random.setSeed(10)
@@ -20,7 +26,7 @@ class FM(featureSize: Int, k: Int) extends qian.Classification{
     tempSum + x.t * this.w + this.b
   }
 
-  def predictLabel(x: DenseVector[Double]): Unit = {
+  def predictLabel(x: DenseVector[Double]): Double = {
     val z = this.getZ(x)
     Activation.sigmoid(z)
   }
@@ -70,7 +76,7 @@ object FM{
     val x = scala.util.Random.nextDouble() - 0.5
     println(x)
 
-    val w = DenseMatrix.rand[Double](4, 2)
+    val w = DenseMatrix.rand[Double](3, 3)
     println(w)
 
     val fm = new FM(3, 2)
@@ -82,6 +88,7 @@ object FM{
     println(w(1,::).t)
     println(w(1,::) * w(1,::).t)
 
-
+    w(::, *) * v1
+    println(w(::, *) * v1.t)
   }
 }
