@@ -1,3 +1,4 @@
 rootProject.name = 'machinelearning'
 include 'autodiff'
+include 'classification'
 
