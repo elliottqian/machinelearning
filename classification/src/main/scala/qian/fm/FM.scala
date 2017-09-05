@@ -1,6 +1,6 @@
 package qian.fm
 
-import breeze.linalg.{*, DenseMatrix, DenseVector}
+import breeze.linalg.{*, DenseMatrix, DenseVector, sum => bSum, Axis}
 import qian.Activation
 /**
   * Created by qianwei on 2017/9/4.
@@ -31,16 +31,44 @@ class FM(featureSize: Int, k: Int) extends qian.Classification{
     Activation.sigmoid(z)
   }
 
+  def getGrad(x: DenseVector[Double], y: Int): (Double, DenseVector[Double], DenseMatrix[Double]) ={
+    val yPredict = this.predictLabel(x)
+    val factor = yPredict - y.toFloat
+    val dyDb = factor * this.getGradDzDb()
+    val dyDw = this.getGradDzDw(x) * factor
+    val dyDv = this.getGradDzDv(x) * factor
+    (dyDb, dyDw, dyDv)
+  }
+
   def getGradDzDb(): Double = 1.0
 
   def getGradDzDw(x: DenseVector[Double]): DenseVector[Double] = x
 
   def getGradDzDv(x: DenseVector[Double]): DenseMatrix[Double] = {
-    null
+    // v的每一列乘以x
+    val a = this.v(::, *) :* x
+    val b = bSum(a, Axis._0)
+    val c = x * b
+    val x_2 = x :* x
+    val d = this.v(::, *) :* x_2
+    c - d
+  }
+
+  def getLoss(x: DenseVector[Double], y: Int): Double ={
+    val yPredict = this.predictLabel(x)
+    FM.getLoss(y, yPredict)
+  }
+
+  def updateParam(gradB: Double, gradW: DenseVector[Double], gradV: DenseMatrix[Double], stepSize: Double): Unit = {
+    this.b -= gradB * stepSize
+    this.w -= gradW * stepSize
+    this.v -= gradV * stepSize
   }
 
   /**
-    *
+    *def get_loss(self, x, y):
+        y_predict = self.predict_label(x)
+        return FM.log_loss(y, y_predict)
     * def get_grad_dz_dw(self, x):
         return x
 
@@ -57,7 +85,9 @@ class FM(featureSize: Int, k: Int) extends qian.Classification{
         self.w -= step_size * grad_w
         self.v -= step_size * grad_v
     * @return
+    *
     */
+
 
 
   override def toString: String = {
@@ -71,24 +101,19 @@ class FM(featureSize: Int, k: Int) extends qian.Classification{
 }
 
 object FM{
+
+  def getLoss(y:Double, y_predict: Double): Double = {
+    var newPredict = y_predict
+    if (y_predict <= 0.00001)
+      newPredict = 0.00001
+    else if (y_predict >= 0.99999)
+      newPredict = 0.99999
+    val l = y * scala.math.log(y_predict) + (1 - y) * scala.math.log(1 - y_predict)
+    -l
+  }
+
+
   def main(args: Array[String]): Unit = {
-    scala.util.Random.setSeed(10)
-    val x = scala.util.Random.nextDouble() - 0.5
-    println(x)
 
-    val w = DenseMatrix.rand[Double](3, 3)
-    println(w)
-
-    val fm = new FM(3, 2)
-    println(fm)
-
-    val v1 = DenseVector[Double](1, 2, 3)
-    println(w(0,::))
-    println(w(1,::))
-    println(w(1,::).t)
-    println(w(1,::) * w(1,::).t)
-
-    w(::, *) * v1
-    println(w(::, *) * v1.t)
   }
 }
