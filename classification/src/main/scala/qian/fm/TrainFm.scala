@@ -24,9 +24,9 @@ class TrainFm(k: Int) extends Serializable{
     this.fmModel = new FM(this.dim, this.k)
   }
 
-  def train(itNum: Int, stepSize: Double): Unit = {
+  def train(itNum: Int, stepSize: Double, reg:Double = 0.0): Unit = {
     for (i <- 0.until(itNum)) {
-      val r = this.trainStep()
+      val r = this.trainStep(reg)
       val sumGradB = r._1
       val sumGradW = r._2
       val sumGradV = r._3
@@ -34,27 +34,30 @@ class TrainFm(k: Int) extends Serializable{
     }
   }
 
-  def stochasticTrain(itNum: Int, stepSize: Double): Unit ={
+  def stochasticTrain(itNum: Int, stepSize: Double, reg: Double = 0.0): Unit ={
     for (i <- 0.until(itNum)) {
+      val stepSize2 = stepSize * (math.log(itNum - i + 2.0) / math.log(itNum + 2.0))
+      println("当前步伐:" + stepSize2)
       for (oneRow <- data) {
         val tempX = new DenseVector[Double](oneRow._2)
-        val r = this.fmModel.getGrad(tempX, oneRow._1)
+        val r = this.fmModel.getGrad(tempX, oneRow._1, reg)
         val sumGradB = r._1
         val sumGradW = r._2
         val sumGradV = r._3
-        this.fmModel.updateParam(sumGradB, sumGradW, sumGradV, stepSize)
+        this.fmModel.updateParam(sumGradB, sumGradW, sumGradV, stepSize2)
       }
+      println(this.getLoss())
     }
   }
 
 
-  def trainStep(): (Double, DenseVector[Double], DenseMatrix[Double]) ={
+  def trainStep(reg: Double): (Double, DenseVector[Double], DenseMatrix[Double]) ={
     var grad_b = 0.0
     var grad_w = DenseVector.zeros[Double](this.dim)
     var grad_v = DenseMatrix.zeros[Double](this.dim, this.k)
     for (oneRow <- data) {
       val tempX = new DenseVector[Double](oneRow._2)
-      val r = this.fmModel.getGrad(tempX, oneRow._1)
+      val r = this.fmModel.getGrad(tempX, oneRow._1, reg)
       val b = r._1
       val w = r._2
       val v = r._3
@@ -70,6 +73,7 @@ class TrainFm(k: Int) extends Serializable{
     for (d <- this.data) {
       val x = new DenseVector[Double](d._2)
       loss += this.fmModel.getLoss(x, d._1)
+      //println(d)
       //println(loss)
     }
     loss
@@ -78,6 +82,12 @@ class TrainFm(k: Int) extends Serializable{
   def testAccuracy(threshold: Double = 0.5): Double ={
     val label = data.map(x => x._1)
     val predictL = data.map(x => DenseVector(x._2)).map{ x => this.fmModel.predictLabel(x, threshold)}
+    FM.accuracy(label, predictL)
+  }
+
+  def accuracy(testSet: Array[(Int, Array[Double])], threshold: Double = 0.5): Double = {
+    val label = testSet.map(x => x._1)
+    val predictL = testSet.map(x => DenseVector(x._2)).map{ x => this.fmModel.predictLabel(x, threshold)}
     FM.accuracy(label, predictL)
   }
 

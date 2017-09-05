@@ -17,8 +17,8 @@ class FM(featureSize: Int, k: Int) extends qian.Classification{
 
   var b: Double = 0.6//scala.util.Random.nextDouble() - 0.5
   println(b)
-  var w: DenseVector[Double] = DenseVector.rand[Double](featureSize) - 0.5  //DenseVector(0.1, 0.3, 0.5)
-  var v: DenseMatrix[Double] = DenseMatrix.rand[Double](featureSize, k) - 0.5 // DenseMatrix((0.15, 0.2),(0.25, 0.3),(0.35, 0.4))//
+  var w: DenseVector[Double] = DenseVector.zeros[Double](featureSize) //DenseVector.rand[Double](featureSize) - 0.5  //DenseVector(0.1, 0.3, 0.5)
+  var v: DenseMatrix[Double] = DenseMatrix.zeros[Double](featureSize, k)//DenseMatrix.rand[Double](featureSize, k) - 0.5 // DenseMatrix((0.15, 0.2),(0.25, 0.3),(0.35, 0.4))//
 
   def getZ(x: DenseVector[Double]): Double = {
     var tempSum = 0.0
@@ -35,6 +35,7 @@ class FM(featureSize: Int, k: Int) extends qian.Classification{
     */
   def predictScore(x: DenseVector[Double]): Double = {
     val z = this.getZ(x)
+    //println("z" + z)
     Activation.sigmoid(z)
   }
 
@@ -47,12 +48,12 @@ class FM(featureSize: Int, k: Int) extends qian.Classification{
   }
 
 
-  def getGrad(x: DenseVector[Double], y: Int): (Double, DenseVector[Double], DenseMatrix[Double]) ={
+  def getGrad(x: DenseVector[Double], y: Int, reg: Double): (Double, DenseVector[Double], DenseMatrix[Double]) ={
     val yPredict = this.predictScore(x)
     val factor = yPredict - y.toFloat
-    val dyDb = factor * this.getGradDzDb()
-    val dyDw = this.getGradDzDw(x) * factor
-    val dyDv = this.getGradDzDv(x) * factor
+    val dyDb = factor * this.getGradDzDb() + b * reg
+    val dyDw = this.getGradDzDw(x) * factor + w * reg
+    val dyDv = this.getGradDzDv(x) * factor + v * reg
     (dyDb, dyDw, dyDv)
   }
 

@@ -4,11 +4,12 @@ package qian.fm
 
 import breeze.linalg.DenseVector
 
+import scala.collection.mutable.ArrayBuffer
 import scala.io.Source
 
 object CheckFm {
 
-  val testFile = "C:\\NewCloudMusicProject\\machinelearning\\classification\\src\\main\\resources\\x"
+  val testFile = "classification\\src\\main\\resources\\x"
   var testData: Array[(Int, Array[Double])] = _
 
   def checkGrad(): Unit = {
@@ -34,7 +35,7 @@ object CheckFm {
     println(fmModel.getLoss(testX, testY))   //正确  ln  3.27
 
 
-    val r = fmModel.getGrad(testX, testY)
+    val r = fmModel.getGrad(testX, testY, 0.0)
     val DB = r._1
     val DW = r._2
     val DV = r._3
@@ -59,22 +60,30 @@ object CheckFm {
 
   def testTrain(): Unit ={
     val trainFm = new TrainFm(4)
-    trainFm.setData(testData)
+
+    val trainData = new ArrayBuffer[(Int, Array[Double])]()
+    val deptData = new ArrayBuffer[(Int, Array[Double])]()
+    for (i <- 0.until(testData.length)) {
+      if (i % 2 == 0)
+        trainData += testData(i)
+      else
+        deptData += testData(i)
+    }
+
+    trainFm.setData(trainData.toArray)
     trainFm.setDim()
     trainFm.initFmModel()
 
-    for (i <- 0.until(100)) {
-      trainFm.stochasticTrain(1, 0.001)
-      println(trainFm.getLoss())
-    }
 
+    trainFm.stochasticTrain(100, 0.01, 0.01)
 
     for (d <- this.testData) {
       println(d._1)
       println(trainFm.fmModel.predictScore(DenseVector(d._2)))
     }
 
-    println("训练集正确率:" + trainFm.testAccuracy())
+
+    println("测试集正确率:" + trainFm.accuracy(deptData.toArray))
 
   }
 

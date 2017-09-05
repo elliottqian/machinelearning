@@ -62,5 +62,13 @@ object Test {
     println(w)
     w(0, 0) = w(0, 0) + 100
     println(w)
+
+    // 步伐衰减函数
+    val stepSize = 1
+    val itNum = 1000
+    for (i <- 0.until(itNum)) {
+      val stepSize2 = stepSize * (math.log(itNum - i + 2) / math.log(itNum + 2))
+      println(stepSize2)
+    }
   }
 }
