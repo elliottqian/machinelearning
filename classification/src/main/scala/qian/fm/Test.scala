@@ -56,5 +56,11 @@ object Test {
     val arr = Array(1.0, 2.0, 3.0)
     val v2 = new DenseVector[Double](arr)
     println(v2)
+
+    println("向量改变某一个元素值")
+    w(0, 0) = w(0, 0) - 100
+    println(w)
+    w(0, 0) = w(0, 0) + 100
+    println(w)
   }
 }

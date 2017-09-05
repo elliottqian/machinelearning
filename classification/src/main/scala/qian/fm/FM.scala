@@ -12,11 +12,13 @@ Matrix(*, ::)+Vector 逐行
 Matrix(::, *)+Vector 逐列
   */
 class FM(featureSize: Int, k: Int) extends qian.Classification{
+
   scala.util.Random.setSeed(10)
 
-  var b: Double = scala.util.Random.nextDouble() - 0.5
-  var w: DenseVector[Double] = DenseVector.rand[Double](featureSize) - 0.5
-  var v: DenseMatrix[Double] = DenseMatrix.rand[Double](featureSize, k) - 0.5
+  var b: Double = 0.6//scala.util.Random.nextDouble() - 0.5
+  println(b)
+  var w: DenseVector[Double] = DenseVector.rand[Double](featureSize) - 0.5  //DenseVector(0.1, 0.3, 0.5)
+  var v: DenseMatrix[Double] = DenseMatrix.rand[Double](featureSize, k) - 0.5 // DenseMatrix((0.15, 0.2),(0.25, 0.3),(0.35, 0.4))//
 
   def getZ(x: DenseVector[Double]): Double = {
     var tempSum = 0.0
@@ -26,13 +28,27 @@ class FM(featureSize: Int, k: Int) extends qian.Classification{
     tempSum + x.t * this.w + this.b
   }
 
-  def predictLabel(x: DenseVector[Double]): Double = {
+  /**
+    * 预测分数
+    * @param x
+    * @return
+    */
+  def predictScore(x: DenseVector[Double]): Double = {
     val z = this.getZ(x)
     Activation.sigmoid(z)
   }
 
+  def predictLabel(x: DenseVector[Double], threshold: Double): Int = {
+    val score = predictScore(x)
+    if (score >= threshold)
+      1
+    else
+      0
+  }
+
+
   def getGrad(x: DenseVector[Double], y: Int): (Double, DenseVector[Double], DenseMatrix[Double]) ={
-    val yPredict = this.predictLabel(x)
+    val yPredict = this.predictScore(x)
     val factor = yPredict - y.toFloat
     val dyDb = factor * this.getGradDzDb()
     val dyDw = this.getGradDzDw(x) * factor
@@ -55,38 +71,38 @@ class FM(featureSize: Int, k: Int) extends qian.Classification{
   }
 
   def getLoss(x: DenseVector[Double], y: Int): Double ={
-    val yPredict = this.predictLabel(x)
+    val yPredict = this.predictScore(x)
     FM.getLoss(y, yPredict)
   }
 
   def updateParam(gradB: Double, gradW: DenseVector[Double], gradV: DenseMatrix[Double], stepSize: Double): Unit = {
-    this.b -= gradB * stepSize
-    this.w -= gradW * stepSize
-    this.v -= gradV * stepSize
+    this.b = this.b - (gradB * stepSize)
+    this.w = this.w - (gradW * stepSize)
+    this.v = this.v - (gradV * stepSize)
   }
 
-  /**
-    *def get_loss(self, x, y):
-        y_predict = self.predict_label(x)
-        return FM.log_loss(y, y_predict)
-    * def get_grad_dz_dw(self, x):
-        return x
+  def checkGradW(x: DenseVector[Double], y: Int, dw:Double, col: Int): Unit ={
+    val f = this.getLoss(x, y)
+    println("旧的损失: " + f)
+    this.w(col) = this.w(col) + dw
+    val newF = this.getLoss(x, y)
+    println("新的损失: " + newF)
+    val dlDw = (newF - f) / dw
+    println("梯度: " + dlDw)
+    this.w(col) = this.w(col) - dw
+  }
 
-    def get_grad_dz_dv(self, x):
-        a = self.v * x.reshape((self.feature_size, 1))
-        b = np.sum(a, 0)
-        c = x.reshape((self.feature_size, 1)).dot(b.reshape((1, self.k)))
-        x_2 = x * x
-        t_ = self.v * x_2.reshape((self.feature_size, 1))
-        r = c - t_
-        return r
-    * def update_parm(self, grad_b, grad_w, grad_v, step_size):
-        self.b -= step_size * grad_b
-        self.w -= step_size * grad_w
-        self.v -= step_size * grad_v
-    * @return
-    *
-    */
+
+  def checkGradV(x: DenseVector[Double], y: Int, dv:Double, row: Int, col: Int): Unit = {
+    val f = this.getLoss(x, y)
+    println("旧的损失: " + f)
+    this.v(row, col) = this.v(row, col) + dv
+    val newF = this.getLoss(x, y)
+    println("新的损失: " + newF)
+    val dlDv = (newF - f) / dv
+    println("梯度: " + dlDv)
+    this.v(row, col) = this.v(row, col) - dv
+  }
 
 
 
@@ -104,16 +120,27 @@ object FM{
 
   def getLoss(y:Double, y_predict: Double): Double = {
     var newPredict = y_predict
-    if (y_predict <= 0.00001)
+    if (y_predict <= 0.0001)
       newPredict = 0.00001
-    else if (y_predict >= 0.99999)
-      newPredict = 0.99999
-    val l = y * scala.math.log(y_predict) + (1 - y) * scala.math.log(1 - y_predict)
+    else if (y_predict >= 0.9999)
+      newPredict = 0.9999
+    val l = y * scala.math.log(newPredict) + (1 - y) * scala.math.log(1 - newPredict)
     -l
+  }
+
+  def getInstance(): Unit ={
+
   }
 
 
   def main(args: Array[String]): Unit = {
 
+  }
+
+
+  def accuracy(label: Array[Int], predict: Array[Int]): Double ={
+    val length = label.length
+    val correctLength = label.zip(predict).count(x => x._1 == x._2)
+    correctLength.toDouble / length.toDouble
   }
 }
